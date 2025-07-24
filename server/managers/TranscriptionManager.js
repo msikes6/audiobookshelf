@@ -85,7 +85,7 @@ class TranscriptionManager {
       })
 
       if (response.status !== 200) {
-        throw new Error(`ASR server returned status ${response.status}`)
+        throw new Error(`ASR server returned status ${response.status}: ${response.data}`)
       }
 
       const transcriptionText = response.data
@@ -103,6 +103,13 @@ class TranscriptionManager {
       Logger.info(`[TranscriptionManager] Successfully completed transcription for episode "${episode.title}" (${episode.id})`)
     } catch (error) {
       Logger.error(`[TranscriptionManager] Failed to transcribe episode "${episode.title}" (${episode.id}):`, error)
+      
+      // Log additional error details
+      if (error.response) {
+        Logger.error(`[TranscriptionManager] ASR server response status: ${error.response.status}`)
+        Logger.error(`[TranscriptionManager] ASR server response data:`, error.response.data)
+        Logger.error(`[TranscriptionManager] ASR server response headers:`, error.response.headers)
+      }
 
       // Update episode with error status
       await episode.update({
