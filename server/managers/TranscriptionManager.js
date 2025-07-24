@@ -58,6 +58,19 @@ class TranscriptionManager {
       // Read the audio file
       const audioBuffer = await fs.readFile(audioFilePath)
       const filename = Path.basename(audioFilePath)
+      const fileExt = Path.extname(filename).toLowerCase().slice(1)
+
+      // Map file extension to proper MIME type
+      const mimeTypes = {
+        'mp3': 'audio/mpeg',
+        'm4a': 'audio/mp4',
+        'wav': 'audio/wav',
+        'flac': 'audio/flac',
+        'ogg': 'audio/ogg',
+        'wma': 'audio/x-ms-wma',
+        'aac': 'audio/aac'
+      }
+      const contentType = mimeTypes[fileExt] || 'application/octet-stream'
 
       // Use form-data library for proper multipart handling
       const formData = new FormData()
@@ -65,17 +78,18 @@ class TranscriptionManager {
       // Add the audio file
       formData.append('audio_file', audioBuffer, {
         filename: filename,
-        contentType: 'audio/mpeg'
+        contentType: contentType
       })
 
-      // Make request to ASR server
+      Logger.info(`[TranscriptionManager] Sending request with filename: ${filename}, contentType: ${contentType}, fileSize: ${audioBuffer.length}`)
+
+      // Make request to ASR server (without language parameter to let server auto-detect)
       const response = await axios.post(`${this.asrServerUrl}/asr`, formData, {
         headers: {
           ...formData.getHeaders()
         },
         params: {
           task: 'transcribe',
-          language: 'auto',
           output: 'txt',
           encode: true
         },
