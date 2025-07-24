@@ -435,6 +435,11 @@ export default {
       this.$store.commit('globals/setSelectedEpisode', episode)
       this.$store.commit('globals/setShowViewPodcastEpisodeModal', true)
     },
+    viewEpisodeTranscription(episode) {
+      this.$store.commit('setSelectedLibraryItem', this.libraryItem)
+      this.$store.commit('globals/setSelectedEpisode', episode)
+      this.$store.commit('globals/setShowEpisodeTranscriptionModal', true)
+    },
     destroyEpisodeComponents() {
       for (const key in this.episodeComponentRefs) {
         if (this.episodeComponentRefs[key]?.destroy) {
@@ -497,6 +502,9 @@ export default {
             })
             this.$on('addToPlaylist', (payload) => {
               _this.addToPlaylist(payload)
+            })
+            this.$on('viewTranscription', (payload) => {
+              _this.viewEpisodeTranscription(payload)
             })
           }
         })

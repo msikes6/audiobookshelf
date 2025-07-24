@@ -9,6 +9,7 @@ export const state = () => ({
   showEditPlaylistModal: false,
   showEditPodcastEpisode: false,
   showViewPodcastEpisodeModal: false,
+  showEpisodeTranscriptionModal: false,
   showRSSFeedOpenCloseModal: false,
   showShareModal: false,
   showConfirmPrompt: false,
@@ -142,6 +143,9 @@ export const mutations = {
   },
   setShowViewPodcastEpisodeModal(state, val) {
     state.showViewPodcastEpisodeModal = val
+  },
+  setShowEpisodeTranscriptionModal(state, val) {
+    state.showEpisodeTranscriptionModal = val
   },
   setShowRSSFeedOpenCloseModal(state, val) {
     state.showRSSFeedOpenCloseModal = val

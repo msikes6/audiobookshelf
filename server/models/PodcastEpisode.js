@@ -45,6 +45,14 @@ class PodcastEpisode extends Model {
     /** @type {Object} */
     this.extraData
     /** @type {string} */
+    this.transcription
+    /** @type {string} */
+    this.transcriptionStatus
+    /** @type {string} */
+    this.transcriptionError
+    /** @type {Date} */
+    this.transcriptionRequestedAt
+    /** @type {string} */
     this.podcastId
     /** @type {Date} */
     this.createdAt
@@ -117,7 +125,12 @@ class PodcastEpisode extends Model {
 
         audioFile: DataTypes.JSON,
         chapters: DataTypes.JSON,
-        extraData: DataTypes.JSON
+        extraData: DataTypes.JSON,
+
+        transcription: DataTypes.TEXT,
+        transcriptionStatus: DataTypes.STRING,
+        transcriptionError: DataTypes.TEXT,
+        transcriptionRequestedAt: DataTypes.DATE
       },
       {
         sequelize,
@@ -222,6 +235,10 @@ class PodcastEpisode extends Model {
       chapters: structuredClone(this.chapters),
       audioFile: structuredClone(this.audioFile),
       publishedAt: this.publishedAt?.valueOf() || null,
+      transcription: this.transcription || null,
+      transcriptionStatus: this.transcriptionStatus || null,
+      transcriptionError: this.transcriptionError || null,
+      transcriptionRequestedAt: this.transcriptionRequestedAt?.valueOf() || null,
       addedAt: this.createdAt.valueOf(),
       updatedAt: this.updatedAt.valueOf()
     }

@@ -16,6 +16,7 @@
     <modals-playlists-edit-modal />
     <modals-podcast-edit-episode />
     <modals-podcast-view-episode />
+    <modals-podcast-episode-transcription-modal />
     <modals-authors-edit-modal />
     <modals-batch-quick-match-model />
     <modals-rssfeed-open-close-modal />

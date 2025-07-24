@@ -519,6 +519,132 @@ class PodcastController {
   }
 
   /**
+   * POST /api/podcasts/:id/episodes/:episodeId/transcribe
+   * Request transcription for podcast episode
+   *
+   * @this import('../routers/ApiRouter')
+   *
+   * @param {RequestWithLibraryItem} req
+   * @param {Response} res
+   */
+  async transcribeEpisode(req, res) {
+    if (!req.user.canUpdate) {
+      Logger.warn(`[PodcastController] User "${req.user.username}" attempted to transcribe episode without permission`)
+      return res.sendStatus(403)
+    }
+
+    const episodeId = req.params.episodeId
+    const episode = req.libraryItem.media.podcastEpisodes.find(ep => ep.id === episodeId)
+    if (!episode) {
+      return res.status(404).send('Episode not found')
+    }
+
+    // Check if episode can be transcribed
+    const transcriptionCheck = this.transcriptionManager.canTranscribeEpisode(episode)
+    if (!transcriptionCheck.canTranscribe) {
+      return res.status(400).json({ error: transcriptionCheck.reason })
+    }
+
+    // Check ASR server health
+    const isAsrHealthy = await this.transcriptionManager.checkAsrServerHealth()
+    if (!isAsrHealthy) {
+      return res.status(503).json({ error: 'Transcription service is currently unavailable' })
+    }
+
+    try {
+      // Get the audio file path
+      const audioFilePath = episode.audioFile.metadata.path
+      if (!audioFilePath) {
+        return res.status(400).json({ error: 'Episode audio file path not found' })
+      }
+
+      // Start transcription (async)
+      this.transcriptionManager.transcribeEpisode(episode, audioFilePath)
+        .then(() => {
+          Logger.info(`[PodcastController] Transcription completed for episode ${episodeId}`)
+          // Emit socket event for real-time updates
+          SocketAuthority.libraryItemEmitter('item_updated', req.libraryItem)
+        })
+        .catch(error => {
+          Logger.error(`[PodcastController] Transcription failed for episode ${episodeId}:`, error)
+        })
+
+      res.json({
+        message: 'Transcription started',
+        episodeId,
+        status: 'processing'
+      })
+    } catch (error) {
+      Logger.error(`[PodcastController] Failed to start transcription for episode ${episodeId}:`, error)
+      res.status(500).json({ error: 'Failed to start transcription' })
+    }
+  }
+
+  /**
+   * GET /api/podcasts/:id/episodes/:episodeId/transcription
+   * Get transcription for podcast episode
+   *
+   * @this import('../routers/ApiRouter')
+   *
+   * @param {RequestWithLibraryItem} req
+   * @param {Response} res
+   */
+  async getEpisodeTranscription(req, res) {
+    const episodeId = req.params.episodeId
+    const episode = req.libraryItem.media.podcastEpisodes.find(ep => ep.id === episodeId)
+    if (!episode) {
+      return res.status(404).send('Episode not found')
+    }
+
+    res.json({
+      episodeId,
+      transcription: episode.transcription || null,
+      transcriptionStatus: episode.transcriptionStatus || null,
+      transcriptionError: episode.transcriptionError || null,
+      transcriptionRequestedAt: episode.transcriptionRequestedAt || null
+    })
+  }
+
+  /**
+   * DELETE /api/podcasts/:id/episodes/:episodeId/transcription
+   * Delete transcription for podcast episode
+   *
+   * @this import('../routers/ApiRouter')
+   *
+   * @param {RequestWithLibraryItem} req
+   * @param {Response} res
+   */
+  async deleteEpisodeTranscription(req, res) {
+    if (!req.user.canDelete) {
+      Logger.warn(`[PodcastController] User "${req.user.username}" attempted to delete transcription without permission`)
+      return res.sendStatus(403)
+    }
+
+    const episodeId = req.params.episodeId
+    const episode = req.libraryItem.media.podcastEpisodes.find(ep => ep.id === episodeId)
+    if (!episode) {
+      return res.status(404).send('Episode not found')
+    }
+
+    try {
+      await episode.update({
+        transcription: null,
+        transcriptionStatus: null,
+        transcriptionError: null,
+        transcriptionRequestedAt: null
+      })
+
+      Logger.info(`[PodcastController] Deleted transcription for episode ${episodeId}`)
+      SocketAuthority.libraryItemEmitter('item_updated', req.libraryItem)
+
+      res.json({ message: 'Transcription deleted', episodeId })
+    } catch (error) {
+      Logger.error(`[PodcastController] Failed to delete transcription for episode ${episodeId}:`, error)
+      res.status(500).json({ error: 'Failed to delete transcription' })
+    }
+  }
+
+  /**
    *
    * @param {RequestWithUser} req
    * @param {Response} res

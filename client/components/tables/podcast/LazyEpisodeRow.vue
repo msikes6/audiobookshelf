@@ -43,6 +43,17 @@
             <ui-icon-btn icon="playlist_add" :aria-label="$strings.LabelYourPlaylists" borderless @click="clickAddToPlaylist" />
           </ui-tooltip>
 
+          <ui-tooltip :text="getTranscribeTooltip" direction="top" v-if="userCanUpdate">
+            <ui-icon-btn
+              :icon="transcriptionIcon"
+              :class="transcriptionButtonClass"
+              :disabled="isTranscribing || (!hasTranscription && !canTranscribe)"
+              :aria-label="getTranscribeTooltip"
+              borderless
+              @click="clickTranscribe"
+            />
+          </ui-tooltip>
+
           <ui-icon-btn v-if="userCanUpdate" icon="edit" borderless @click="clickEdit" />
           <ui-icon-btn v-if="userCanDelete" icon="close" :aria-label="$strings.HeaderRemoveEpisode" borderless @click="removeClick" />
         </div>
@@ -146,6 +157,39 @@ export default {
       const duration = this.itemProgress.duration || this.episode?.duration || 0
       const remaining = Math.floor(duration - this.itemProgress.currentTime)
       return this.$getString('LabelTimeLeft', [this.$elapsedPretty(remaining)])
+    },
+    transcriptionStatus() {
+      return this.episode?.transcriptionStatus || null
+    },
+    hasTranscription() {
+      return !!this.episode?.transcription
+    },
+    isTranscribing() {
+      return this.transcriptionStatus === 'processing'
+    },
+    transcriptionFailed() {
+      return this.transcriptionStatus === 'failed'
+    },
+    canTranscribe() {
+      return !this.hasTranscription && !this.isTranscribing && this.episode?.audioFile
+    },
+    transcriptionIcon() {
+      if (this.hasTranscription) return 'subtitles'
+      if (this.isTranscribing) return 'hourglass_empty'
+      if (this.transcriptionFailed) return 'error'
+      return 'mic'
+    },
+    transcriptionButtonClass() {
+      if (this.hasTranscription) return 'text-success'
+      if (this.isTranscribing) return 'text-yellow-500'
+      if (this.transcriptionFailed) return 'text-red-500'
+      return ''
+    },
+    getTranscribeTooltip() {
+      if (this.hasTranscription) return 'View Transcription'
+      if (this.isTranscribing) return 'Transcription in Progress'
+      if (this.transcriptionFailed) return 'Transcription Failed - Click to Retry'
+      return 'Generate Transcription'
     }
   },
   methods: {
@@ -222,6 +266,31 @@ export default {
     },
     clickEdit() {
       this.$emit('edit', this.episode)
+    },
+    async clickTranscribe() {
+      if (this.hasTranscription) {
+        // View transcription
+        this.$emit('viewTranscription', this.episode)
+        return
+      }
+
+      if (this.isTranscribing) {
+        return // Already processing
+      }
+
+      try {
+        const toast = this.$toast || this.$nuxt.$toast
+
+        // Start transcription
+        await this.axios.$post(`/api/podcasts/${this.libraryItemId}/episodes/${this.episodeId}/transcribe`)
+
+        toast.success('Transcription started. This may take several minutes.')
+      } catch (error) {
+        console.error('Failed to start transcription:', error)
+        const toast = this.$toast || this.$nuxt.$toast
+        const errorMessage = error.response?.data?.error || 'Failed to start transcription'
+        toast.error(errorMessage)
+      }
     },
     removeClick() {
       this.$emit('remove', this.episode)

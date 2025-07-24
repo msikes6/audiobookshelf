@@ -41,6 +41,36 @@
           </p>
         </div>
       </div>
+
+      <div class="w-full h-px bg-white/5 my-4" />
+
+      <div class="flex items-center justify-between">
+        <div class="flex items-center">
+          <span class="material-symbols text-gray-400 mr-2">subtitles</span>
+          <span class="text-sm font-semibold">Transcription</span>
+        </div>
+        <div class="flex items-center space-x-2">
+          <ui-btn v-if="hasTranscription" small @click="viewTranscription">
+            <span class="material-symbols text-sm mr-1">subtitles</span>
+            View Transcription
+          </ui-btn>
+          <ui-btn v-else-if="!isTranscribing && userCanUpdate" small @click="generateTranscription" :disabled="processing">
+            <span class="material-symbols text-sm mr-1">mic</span>
+            Generate Transcription
+          </ui-btn>
+          <div v-else-if="isTranscribing" class="text-sm text-yellow-500 flex items-center">
+            <span class="material-symbols animate-spin mr-1">hourglass_empty</span>
+            Processing...
+          </div>
+          <div v-else-if="transcriptionFailed" class="text-sm text-red-500 flex items-center">
+            <span class="material-symbols mr-1">error</span>
+            Failed
+            <ui-btn v-if="userCanUpdate" small class="ml-2" @click="generateTranscription" :disabled="processing">
+              Retry
+            </ui-btn>
+          </div>
+        </div>
+      </div>
     </div>
   </modals-modal>
 </template>
@@ -102,6 +132,18 @@ export default {
     },
     bookCoverAspectRatio() {
       return this.$store.getters['libraries/getBookCoverAspectRatio']
+    },
+    userCanUpdate() {
+      return this.$store.getters['user/getUserCanUpdate']
+    },
+    hasTranscription() {
+      return !!this.episode.transcription
+    },
+    isTranscribing() {
+      return this.episode.transcriptionStatus === 'processing'
+    },
+    transcriptionFailed() {
+      return this.episode.transcriptionStatus === 'failed'
     }
   },
   methods: {
@@ -117,6 +159,22 @@ export default {
         }
         e.preventDefault()
       }
+    },
+    viewTranscription() {
+      this.show = false
+      this.$store.commit('globals/setShowEpisodeTranscriptionModal', true)
+    },
+    async generateTranscription() {
+      this.processing = true
+      try {
+        await this.$axios.$post(`/api/podcasts/${this.libraryItem.id}/episodes/${this.episodeId}/transcribe`)
+        this.$toast.success('Transcription started. This may take several minutes.')
+      } catch (error) {
+        console.error('Failed to start transcription:', error)
+        const errorMessage = error.response?.data?.error || 'Failed to start transcription'
+        this.$toast.error(errorMessage)
+      }
+      this.processing = false
     },
     parseDescription(description) {
       const timeMarkerLinkRegex = /<a href="#([^"]*?\b\d{1,2}:\d{1,2}(?::\d{1,2})?)">(.*?)<\/a>/g
