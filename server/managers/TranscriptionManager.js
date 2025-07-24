@@ -22,11 +22,18 @@ class TranscriptionManager {
    */
   async checkAsrServerHealth() {
     try {
-      const response = await axios.get(`${this.asrServerUrl}/health`, { timeout: 5000 })
+      // Try the root endpoint or OpenAPI docs endpoint instead of /health
+      const response = await axios.get(`${this.asrServerUrl}/`, { timeout: 5000 })
       return response.status === 200
     } catch (error) {
-      Logger.warn(`[TranscriptionManager] ASR server health check failed:`, error.message)
-      return false
+      try {
+        // Fallback: try the OpenAPI docs endpoint
+        const response = await axios.get(`${this.asrServerUrl}/docs`, { timeout: 5000 })
+        return response.status === 200
+      } catch (docsError) {
+        Logger.warn(`[TranscriptionManager] ASR server health check failed:`, error.message)
+        return false
+      }
     }
   }
 

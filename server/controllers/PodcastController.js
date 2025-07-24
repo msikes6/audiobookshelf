@@ -545,12 +545,6 @@ class PodcastController {
       return res.status(400).json({ error: transcriptionCheck.reason })
     }
 
-    // Check ASR server health
-    const isAsrHealthy = await this.transcriptionManager.checkAsrServerHealth()
-    if (!isAsrHealthy) {
-      return res.status(503).json({ error: 'Transcription service is currently unavailable' })
-    }
-
     try {
       // Get the audio file path
       const audioFilePath = episode.audioFile.metadata.path
