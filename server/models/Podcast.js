@@ -47,6 +47,8 @@ class Podcast extends Model {
     this.autoDownloadEpisodes
     /** @type {string} */
     this.autoDownloadSchedule
+    /** @type {boolean} */
+    this.autoTranscribeEpisodes
     /** @type {Date} */
     this.lastEpisodeCheck
     /** @type {number} */
@@ -99,6 +101,7 @@ class Podcast extends Model {
         explicit: !!payload.metadata.explicit,
         autoDownloadEpisodes: !!payload.autoDownloadEpisodes,
         autoDownloadSchedule: autoDownloadSchedule || global.ServerSettings.podcastEpisodeSchedule,
+        autoTranscribeEpisodes: !!payload.autoTranscribeEpisodes,
         lastEpisodeCheck: new Date(),
         maxEpisodesToKeep: 0,
         maxNewEpisodesToDownload: 3,
@@ -137,6 +140,7 @@ class Podcast extends Model {
 
         autoDownloadEpisodes: DataTypes.BOOLEAN,
         autoDownloadSchedule: DataTypes.STRING,
+        autoTranscribeEpisodes: DataTypes.BOOLEAN,
         lastEpisodeCheck: DataTypes.DATE,
         maxEpisodesToKeep: DataTypes.INTEGER,
         maxNewEpisodesToDownload: DataTypes.INTEGER,

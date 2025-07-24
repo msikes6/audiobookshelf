@@ -31,6 +31,17 @@
 
         <widgets-cron-expression-builder ref="cronExpressionBuilder" v-if="enableAutoDownloadEpisodes" v-model="cronExpression" />
       </template>
+
+      <!-- Auto-transcription section -->
+      <template v-if="userIsAdminOrUp">
+        <div class="flex items-center justify-between mb-4 mt-8">
+          <p class="text-base md:text-xl font-semibold">Auto-transcribe Episodes</p>
+          <ui-checkbox v-model="enableAutoTranscribeEpisodes" :label="$strings.LabelEnable" medium checkbox-bg="bg" label-class="pl-2 text-base md:text-lg" />
+        </div>
+        <div v-if="enableAutoTranscribeEpisodes" class="mb-4">
+          <p class="text-sm text-gray-400">New episodes will be automatically added to the transcription queue when downloaded.</p>
+        </div>
+      </template>
     </div>
 
     <div v-if="feedUrl || autoDownloadEpisodes" class="absolute bottom-0 left-0 w-full py-2 md:py-4 bg-bg border-t border-white/5">
@@ -54,6 +65,7 @@ export default {
   data() {
     return {
       enableAutoDownloadEpisodes: false,
+      enableAutoTranscribeEpisodes: false,
       cronExpression: null,
       newMaxEpisodesToKeep: 0,
       newMaxNewEpisodesToDownload: 0
@@ -97,6 +109,9 @@ export default {
     autoDownloadSchedule() {
       return this.media.autoDownloadSchedule
     },
+    autoTranscribeEpisodes() {
+      return !!this.media.autoTranscribeEpisodes
+    },
     maxEpisodesToKeep() {
       return this.media.maxEpisodesToKeep
     },
@@ -104,7 +119,7 @@ export default {
       return this.media.maxNewEpisodesToDownload
     },
     isUpdated() {
-      return this.autoDownloadSchedule !== this.cronExpression || this.autoDownloadEpisodes !== this.enableAutoDownloadEpisodes || this.maxEpisodesToKeep !== Number(this.newMaxEpisodesToKeep) || this.maxNewEpisodesToDownload !== Number(this.newMaxNewEpisodesToDownload)
+      return this.autoDownloadSchedule !== this.cronExpression || this.autoDownloadEpisodes !== this.enableAutoDownloadEpisodes || this.autoTranscribeEpisodes !== this.enableAutoTranscribeEpisodes || this.maxEpisodesToKeep !== Number(this.newMaxEpisodesToKeep) || this.maxNewEpisodesToDownload !== Number(this.newMaxNewEpisodesToDownload)
     }
   },
   methods: {
@@ -138,7 +153,8 @@ export default {
       }
 
       const updatePayload = {
-        autoDownloadEpisodes: this.enableAutoDownloadEpisodes
+        autoDownloadEpisodes: this.enableAutoDownloadEpisodes,
+        autoTranscribeEpisodes: this.enableAutoTranscribeEpisodes
       }
       if (this.enableAutoDownloadEpisodes) {
         updatePayload.autoDownloadSchedule = this.cronExpression
@@ -173,6 +189,7 @@ export default {
     },
     init() {
       this.enableAutoDownloadEpisodes = this.autoDownloadEpisodes
+      this.enableAutoTranscribeEpisodes = this.autoTranscribeEpisodes
       this.cronExpression = this.autoDownloadSchedule
       this.newMaxEpisodesToKeep = this.maxEpisodesToKeep
       this.newMaxNewEpisodesToDownload = this.maxNewEpisodesToDownload

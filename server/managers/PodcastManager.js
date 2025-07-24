@@ -264,6 +264,18 @@ class PodcastManager {
       NotificationManager.onPodcastEpisodeDownloaded(libraryItem, podcastEpisode)
     }
 
+    // Check if auto-transcription is enabled for this podcast
+    if (libraryItem.media.autoTranscribeEpisodes && podcastEpisode.audioFile) {
+      Logger.info(`[PodcastManager] Auto-transcription enabled, adding episode "${podcastEpisode.title}" to transcription queue`)
+      const TranscriptionManager = require('./TranscriptionManager')
+      TranscriptionManager.addToTranscriptionQueue(
+        podcastEpisode, 
+        podcastEpisode.audioFile.metadata.path, 
+        libraryItem.id, 
+        'auto'
+      )
+    }
+
     return true
   }
 

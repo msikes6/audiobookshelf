@@ -3,10 +3,17 @@ const fs = require('../libs/fsExtra')
 const Logger = require('../Logger')
 const Path = require('path')
 const FormData = require('form-data')
+const Database = require('../Database')
+const SocketAuthority = require('../SocketAuthority')
 
 class TranscriptionManager {
   constructor() {
     this.asrServerUrl = 'http://192.168.0.213:9005'
+    /** @type {{episodeId: string, libraryItemId: string, title: string, audioFilePath: string, priority: 'auto'|'manual'}[]} */
+    this.transcriptionQueue = []
+    /** @type {string|null} */
+    this.currentTranscriptionEpisodeId = null
+    this.isProcessingQueue = false
   }
 
   /**
@@ -15,6 +22,108 @@ class TranscriptionManager {
    */
   getSupportedAudioFormats() {
     return ['mp3', 'm4a', 'wav', 'flac', 'ogg', 'wma', 'aac']
+  }
+
+  /**
+   * Get items in transcription queue
+   * @param {string} [libraryItemId] - Optional filter by library item
+   * @returns {Array}
+   */
+  getTranscriptionQueue(libraryItemId = null) {
+    if (libraryItemId) {
+      return this.transcriptionQueue.filter(item => item.libraryItemId === libraryItemId)
+    }
+    return [...this.transcriptionQueue]
+  }
+
+  /**
+   * Get current transcription status
+   * @returns {Object}
+   */
+  getTranscriptionStatus() {
+    return {
+      isProcessing: this.isProcessingQueue,
+      currentEpisodeId: this.currentTranscriptionEpisodeId,
+      queueLength: this.transcriptionQueue.length,
+      queue: this.transcriptionQueue.map(item => ({
+        episodeId: item.episodeId,
+        libraryItemId: item.libraryItemId,
+        title: item.title,
+        priority: item.priority
+      }))
+    }
+  }
+
+  /**
+   * Add episode to transcription queue
+   * @param {Object} episode - The podcast episode
+   * @param {string} audioFilePath - Path to the audio file
+   * @param {string} libraryItemId - Library item ID
+   * @param {'auto'|'manual'} [priority='manual'] - Priority level
+   * @returns {boolean}
+   */
+  addToTranscriptionQueue(episode, audioFilePath, libraryItemId, priority = 'manual') {
+    // Check if already in queue or currently processing
+    if (this.currentTranscriptionEpisodeId === episode.id) {
+      Logger.debug(`[TranscriptionManager] Episode ${episode.id} is currently being transcribed`)
+      return false
+    }
+
+    if (this.transcriptionQueue.some(item => item.episodeId === episode.id)) {
+      Logger.debug(`[TranscriptionManager] Episode ${episode.id} is already in transcription queue`)
+      return false
+    }
+
+    const queueItem = {
+      episodeId: episode.id,
+      libraryItemId,
+      title: episode.title,
+      audioFilePath,
+      priority
+    }
+
+    // Add to queue with priority (manual requests go to front)
+    if (priority === 'manual') {
+      this.transcriptionQueue.unshift(queueItem)
+    } else {
+      this.transcriptionQueue.push(queueItem)
+    }
+
+    Logger.info(`[TranscriptionManager] Added episode "${episode.title}" to transcription queue (priority: ${priority})`)
+    this.processTranscriptionQueue()
+    return true
+  }
+
+  /**
+   * Remove episode from transcription queue
+   * @param {string} episodeId - Episode ID to remove
+   * @returns {boolean}
+   */
+  removeFromTranscriptionQueue(episodeId) {
+    const initialLength = this.transcriptionQueue.length
+    this.transcriptionQueue = this.transcriptionQueue.filter(item => item.episodeId !== episodeId)
+    const removed = this.transcriptionQueue.length < initialLength
+    
+    if (removed) {
+      Logger.info(`[TranscriptionManager] Removed episode ${episodeId} from transcription queue`)
+    }
+    
+    return removed
+  }
+
+  /**
+   * Clear transcription queue
+   * @param {string} [libraryItemId] - Optional filter by library item
+   */
+  clearTranscriptionQueue(libraryItemId = null) {
+    if (libraryItemId) {
+      const itemQueue = this.transcriptionQueue.filter(item => item.libraryItemId === libraryItemId)
+      Logger.info(`[TranscriptionManager] Clearing transcription queue for item "${libraryItemId}" (${itemQueue.length} items)`)
+      this.transcriptionQueue = this.transcriptionQueue.filter(item => item.libraryItemId !== libraryItemId)
+    } else {
+      Logger.info(`[TranscriptionManager] Clearing all transcriptions in queue (${this.transcriptionQueue.length} items)`)
+      this.transcriptionQueue = []
+    }
   }
 
   /**
@@ -39,12 +148,73 @@ class TranscriptionManager {
   }
 
   /**
-   * Start transcription for a podcast episode
+   * Process transcription queue
+   */
+  async processTranscriptionQueue() {
+    if (this.isProcessingQueue || this.transcriptionQueue.length === 0) {
+      return
+    }
+
+    this.isProcessingQueue = true
+    Logger.info(`[TranscriptionManager] Starting queue processing. Queue length: ${this.transcriptionQueue.length}`)
+
+    while (this.transcriptionQueue.length > 0) {
+      const queueItem = this.transcriptionQueue.shift()
+      this.currentTranscriptionEpisodeId = queueItem.episodeId
+
+      try {
+        // Get the episode from database
+        const episode = await Database.podcastEpisodeModel.findByPk(queueItem.episodeId)
+        
+        if (!episode) {
+          Logger.error(`[TranscriptionManager] Episode ${queueItem.episodeId} not found in database, skipping`)
+          continue
+        }
+
+        // Check if episode can still be transcribed
+        const transcriptionCheck = this.canTranscribeEpisode(episode)
+        if (!transcriptionCheck.canTranscribe) {
+          Logger.warn(`[TranscriptionManager] Episode ${queueItem.episodeId} can no longer be transcribed: ${transcriptionCheck.reason}`)
+          continue
+        }
+
+        await this.transcribeEpisodeInternal(episode, queueItem.audioFilePath)
+        Logger.info(`[TranscriptionManager] Successfully completed transcription for queued episode "${episode.title}"`)
+        
+        // Emit socket event for real-time updates
+        const libraryItem = await Database.libraryItemModel.findByPk(queueItem.libraryItemId)
+        if (libraryItem) {
+          SocketAuthority.libraryItemEmitter('item_updated', libraryItem)
+        }
+      } catch (error) {
+        Logger.error(`[TranscriptionManager] Failed to transcribe queued episode ${queueItem.episodeId}:`, error)
+      }
+    }
+
+    this.currentTranscriptionEpisodeId = null
+    this.isProcessingQueue = false
+    Logger.info('[TranscriptionManager] Queue processing completed')
+  }
+
+  /**
+   * Add episode to queue and start processing (public method)
+   * @param {Object} episode - The podcast episode
+   * @param {string} audioFilePath - Path to the audio file
+   * @param {string} libraryItemId - Library item ID
+   * @param {'auto'|'manual'} [priority='manual'] - Priority level
+   * @returns {Promise<boolean>}
+   */
+  async transcribeEpisode(episode, audioFilePath, libraryItemId, priority = 'manual') {
+    return this.addToTranscriptionQueue(episode, audioFilePath, libraryItemId, priority)
+  }
+
+  /**
+   * Internal transcription method (does the actual work)
    * @param {Object} episode - The podcast episode
    * @param {string} audioFilePath - Path to the audio file
    * @returns {Promise<void>}
    */
-  async transcribeEpisode(episode, audioFilePath) {
+  async transcribeEpisodeInternal(episode, audioFilePath) {
     try {
       Logger.info(`[TranscriptionManager] Starting transcription for episode "${episode.title}" (${episode.id})`)
 

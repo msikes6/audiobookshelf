@@ -258,6 +258,9 @@ class ApiRouter {
     this.router.post('/podcasts/:id/episodes/:episodeId/transcribe', PodcastController.middleware.bind(this), PodcastController.transcribeEpisode.bind(this))
     this.router.get('/podcasts/:id/episodes/:episodeId/transcription', PodcastController.middleware.bind(this), PodcastController.getEpisodeTranscription.bind(this))
     this.router.delete('/podcasts/:id/episodes/:episodeId/transcription', PodcastController.middleware.bind(this), PodcastController.deleteEpisodeTranscription.bind(this))
+    this.router.get('/podcasts/:id/transcription-queue', PodcastController.middleware.bind(this), PodcastController.getTranscriptionQueue.bind(this))
+    this.router.delete('/podcasts/:id/transcription-queue', PodcastController.middleware.bind(this), PodcastController.clearTranscriptionQueue.bind(this))
+    this.router.get('/podcasts/transcription-status', PodcastController.getGlobalTranscriptionStatus.bind(this))
 
     //
     // Notification Routes (Admin and up)

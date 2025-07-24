@@ -552,22 +552,18 @@ class PodcastController {
         return res.status(400).json({ error: 'Episode audio file path not found' })
       }
 
-      // Start transcription (async)
-      this.transcriptionManager.transcribeEpisode(episode, audioFilePath)
-        .then(() => {
-          Logger.info(`[PodcastController] Transcription completed for episode ${episodeId}`)
-          // Emit socket event for real-time updates
-          SocketAuthority.libraryItemEmitter('item_updated', req.libraryItem)
+      // Add to transcription queue
+      const success = await this.transcriptionManager.transcribeEpisode(episode, audioFilePath, req.libraryItem.id, 'manual')
+      
+      if (success) {
+        res.json({
+          message: 'Transcription queued',
+          episodeId,
+          status: 'queued'
         })
-        .catch(error => {
-          Logger.error(`[PodcastController] Transcription failed for episode ${episodeId}:`, error)
-        })
-
-      res.json({
-        message: 'Transcription started',
-        episodeId,
-        status: 'processing'
-      })
+      } else {
+        res.status(400).json({ error: 'Episode is already queued or being processed' })
+      }
     } catch (error) {
       Logger.error(`[PodcastController] Failed to start transcription for episode ${episodeId}:`, error)
       res.status(500).json({ error: 'Failed to start transcription' })
@@ -636,6 +632,55 @@ class PodcastController {
       Logger.error(`[PodcastController] Failed to delete transcription for episode ${episodeId}:`, error)
       res.status(500).json({ error: 'Failed to delete transcription' })
     }
+  }
+
+  /**
+   * GET /api/podcasts/:id/transcription-queue
+   * Get transcription queue for podcast
+   *
+   * @this import('../routers/ApiRouter')
+   *
+   * @param {RequestWithLibraryItem} req
+   * @param {Response} res
+   */
+  async getTranscriptionQueue(req, res) {
+    const queue = this.transcriptionManager.getTranscriptionQueue(req.libraryItem.id)
+    res.json({
+      queue,
+      status: this.transcriptionManager.getTranscriptionStatus()
+    })
+  }
+
+  /**
+   * DELETE /api/podcasts/:id/transcription-queue
+   * Clear transcription queue for podcast
+   *
+   * @this import('../routers/ApiRouter')
+   *
+   * @param {RequestWithLibraryItem} req
+   * @param {Response} res
+   */
+  async clearTranscriptionQueue(req, res) {
+    if (!req.user.canUpdate) {
+      Logger.warn(`[PodcastController] User "${req.user.username}" attempted to clear transcription queue without permission`)
+      return res.sendStatus(403)
+    }
+
+    this.transcriptionManager.clearTranscriptionQueue(req.libraryItem.id)
+    res.json({ message: 'Transcription queue cleared' })
+  }
+
+  /**
+   * GET /api/podcasts/transcription-status
+   * Get global transcription status
+   *
+   * @this import('../routers/ApiRouter')
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
+  async getGlobalTranscriptionStatus(req, res) {
+    res.json(this.transcriptionManager.getTranscriptionStatus())
   }
 
   /**
