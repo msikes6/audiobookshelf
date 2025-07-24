@@ -2,6 +2,7 @@ const axios = require('axios')
 const fs = require('../libs/fsExtra')
 const Logger = require('../Logger')
 const Path = require('path')
+const FormData = require('form-data')
 
 class TranscriptionManager {
   constructor() {
@@ -57,45 +58,20 @@ class TranscriptionManager {
       // Read the audio file
       const audioBuffer = await fs.readFile(audioFilePath)
       const filename = Path.basename(audioFilePath)
-      const fileExt = Path.extname(filename).toLowerCase().slice(1)
 
-      // Map file extension to MIME type
-      const mimeTypes = {
-        'mp3': 'audio/mpeg',
-        'm4a': 'audio/mp4',
-        'wav': 'audio/wav',
-        'flac': 'audio/flac',
-        'ogg': 'audio/ogg',
-        'wma': 'audio/x-ms-wma',
-        'aac': 'audio/aac'
-      }
-      const contentType = mimeTypes[fileExt] || 'audio/mpeg'
-
-      // Create multipart form data manually
-      const boundary = `----formdata-${Date.now()}`
-      const formDataParts = []
-
-      // Add audio file part
-      formDataParts.push(`--${boundary}`)
-      formDataParts.push(`Content-Disposition: form-data; name="audio_file"; filename="${filename}"`)
-      formDataParts.push(`Content-Type: ${contentType}`)
-      formDataParts.push('')
-
-      const formDataHeader = formDataParts.join('\r\n') + '\r\n'
-      const formDataFooter = `\r\n--${boundary}--\r\n`
-
-      // Combine all parts
-      const formData = Buffer.concat([
-        Buffer.from(formDataHeader),
-        audioBuffer,
-        Buffer.from(formDataFooter)
-      ])
+      // Use form-data library for proper multipart handling
+      const formData = new FormData()
+      
+      // Add the audio file
+      formData.append('audio_file', audioBuffer, {
+        filename: filename,
+        contentType: 'audio/mpeg'
+      })
 
       // Make request to ASR server
       const response = await axios.post(`${this.asrServerUrl}/asr`, formData, {
         headers: {
-          'Content-Type': `multipart/form-data; boundary=${boundary}`,
-          'Content-Length': formData.length
+          ...formData.getHeaders()
         },
         params: {
           task: 'transcribe',
