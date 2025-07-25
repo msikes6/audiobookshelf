@@ -56,6 +56,9 @@
         <div class="px-4">
           <ui-checkbox v-model="podcast.autoDownloadEpisodes" :label="$strings.LabelAutoDownloadEpisodes" checkbox-bg="primary" border-color="gray-600" label-class="pl-2 text-sm md:text-base font-semibold" />
         </div>
+        <div class="px-4">
+          <ui-checkbox v-model="podcast.autoTranscribeEpisodes" label="Auto-transcribe Episodes" checkbox-bg="primary" border-color="gray-600" label-class="pl-2 text-sm md:text-base font-semibold" />
+        </div>
         <ui-btn color="bg-success" @click="submit">{{ $strings.ButtonSubmit }}</ui-btn>
       </div>
     </div>
@@ -94,6 +97,7 @@ export default {
         itunesId: '',
         itunesArtistId: '',
         autoDownloadEpisodes: false,
+        autoTranscribeEpisodes: false,
         language: '',
         explicit: false,
         type: ''
@@ -196,7 +200,8 @@ export default {
             explicit: this.podcast.explicit,
             type: this.podcast.type
           },
-          autoDownloadEpisodes: this.podcast.autoDownloadEpisodes
+          autoDownloadEpisodes: this.podcast.autoDownloadEpisodes,
+          autoTranscribeEpisodes: this.podcast.autoTranscribeEpisodes
         }
       }
       console.log('Podcast payload', podcastPayload)
@@ -231,6 +236,7 @@ export default {
       this.podcast.itunesArtistId = this._podcastData.artistId || ''
       this.podcast.language = this._podcastData.language || this.feedMetadata.language || ''
       this.podcast.autoDownloadEpisodes = false
+      this.podcast.autoTranscribeEpisodes = false
       this.podcast.type = this._podcastData.type || this.feedMetadata.type || 'episodic'
 
       this.podcast.explicit = this._podcastData.explicit || this.feedMetadata.explicit === 'yes' || this.feedMetadata.explicit == 'true'
