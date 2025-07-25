@@ -47,6 +47,57 @@
         </template>
 
         <tables-podcast-download-queue-table v-if="episodeDownloadsQueued.length" :queue="episodeDownloadsQueued"></tables-podcast-download-queue-table>
+
+        <!-- Transcription Queue Section -->
+        <div class="mt-12">
+          <div class="flex items-center justify-between mb-4">
+            <p class="text-xl font-semibold px-4 md:px-0">Transcription Queue</p>
+            <div class="flex items-center space-x-2 px-4 md:px-0">
+              <div class="flex items-center space-x-2">
+                <span class="w-3 h-3 rounded-full" :class="transcriptionStatus.isProcessing ? 'bg-yellow-500' : 'bg-gray-500'"></span>
+                <span class="text-sm">{{ transcriptionStatus.isProcessing ? 'Processing' : 'Idle' }}</span>
+              </div>
+              <ui-btn @click="refreshTranscriptionStatus" size="sm" :loading="loadingTranscriptionStatus">
+                <span class="material-symbols text-sm">refresh</span>
+              </ui-btn>
+            </div>
+          </div>
+
+          <div v-if="transcriptionStatus.currentEpisodeId" class="mb-6 p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-lg mx-4 md:mx-0">
+            <div class="flex items-center space-x-3">
+              <covers-preview-cover :src="currentTranscriptionCover" :width="48" :book-cover-aspect-ratio="bookCoverAspectRatio" :show-resolution="false" />
+              <div class="grow">
+                <div class="flex items-center space-x-2 mb-1">
+                  <span class="material-symbols text-yellow-500 text-lg animate-spin">hourglass_empty</span>
+                  <span class="font-semibold text-sm">Currently Transcribing</span>
+                </div>
+                <p class="text-sm">{{ getCurrentTranscriptionTitle() }}</p>
+                <p class="text-xs text-gray-400">{{ getCurrentTranscriptionPodcast() }}</p>
+              </div>
+            </div>
+          </div>
+
+          <div v-if="!transcriptionStatus.queueLength && !transcriptionStatus.isProcessing" class="text-lg py-4 px-4 md:px-0">
+            No transcriptions in progress or queued
+          </div>
+
+          <div v-if="transcriptionQueue.length" class="space-y-4">
+            <p class="text-sm text-gray-300 px-4 md:px-0 mb-4">Queued Episodes ({{ transcriptionQueue.length }})</p>
+            <div v-for="(queueItem, index) in transcriptionQueue" :key="queueItem.episodeId" class="flex items-center p-4 bg-bg border border-white/10 rounded-lg mx-4 md:mx-0">
+              <covers-preview-cover :src="getTranscriptionQueueCover(queueItem.libraryItemId)" :width="48" :book-cover-aspect-ratio="bookCoverAspectRatio" :show-resolution="false" />
+              <div class="grow pl-4">
+                <div class="flex items-center space-x-2 mb-1">
+                  <span class="text-xs text-gray-400">#{{ index + 1 }}</span>
+                  <span class="text-xs px-2 py-1 rounded" :class="queueItem.priority === 'manual' ? 'bg-blue-500/20 text-blue-300' : 'bg-green-500/20 text-green-300'">
+                    {{ queueItem.priority }}
+                  </span>
+                </div>
+                <p class="font-semibold text-sm">{{ queueItem.title }}</p>
+                <p class="text-xs text-gray-400">{{ getTranscriptionQueuePodcast(queueItem.libraryItemId) }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -75,7 +126,16 @@ export default {
     return {
       episodesDownloading: [],
       episodeDownloadsQueued: [],
-      processing: false
+      processing: false,
+      transcriptionStatus: {
+        isProcessing: false,
+        currentEpisodeId: null,
+        queueLength: 0,
+        queue: []
+      },
+      loadingTranscriptionStatus: false,
+      transcriptionStatusInterval: null,
+      libraryItems: {}
     }
   },
   computed: {
@@ -84,6 +144,18 @@ export default {
     },
     streamLibraryItem() {
       return this.$store.state.streamLibraryItem
+    },
+    transcriptionQueue() {
+      return this.transcriptionStatus?.queue?.filter(item => {
+        const libraryItem = this.libraryItems[item.libraryItemId]
+        return libraryItem && libraryItem.libraryId === this.libraryId
+      }) || []
+    },
+    currentTranscriptionCover() {
+      if (!this.transcriptionStatus?.currentEpisodeId) return null
+      const currentItem = this.transcriptionQueue.find(item => item.episodeId === this.transcriptionStatus.currentEpisodeId)
+      if (!currentItem) return null
+      return this.$store.getters['globals/getLibraryItemCoverSrcById'](currentItem.libraryItemId)
     }
   },
   methods: {
@@ -125,15 +197,76 @@ export default {
       this.$root.socket.on('episode_download_queued', this.episodeDownloadQueued)
       this.$root.socket.on('episode_download_started', this.episodeDownloadStarted)
       this.$root.socket.on('episode_download_finished', this.episodeDownloadFinished)
+    },
+    async refreshTranscriptionStatus() {
+      if (this.loadingTranscriptionStatus) return
+      
+      this.loadingTranscriptionStatus = true
+      try {
+        const response = await this.$axios.$get('/api/podcasts/transcription-status')
+        this.transcriptionStatus = response
+        
+        // Fetch library item details for queue items
+        const libraryItemIds = [...new Set(this.transcriptionStatus.queue.map(item => item.libraryItemId))]
+        for (const libraryItemId of libraryItemIds) {
+          if (!this.libraryItems[libraryItemId]) {
+            try {
+              const libraryItem = await this.$axios.$get(`/api/items/${libraryItemId}`)
+              this.$set(this.libraryItems, libraryItemId, libraryItem)
+            } catch (error) {
+              console.error(`Failed to fetch library item ${libraryItemId}:`, error)
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch transcription status:', error)
+      }
+      this.loadingTranscriptionStatus = false
+    },
+    getCurrentTranscriptionTitle() {
+      if (!this.transcriptionStatus?.currentEpisodeId) return 'Unknown'
+      const currentItem = this.transcriptionStatus.queue.find(item => item.episodeId === this.transcriptionStatus.currentEpisodeId)
+      return currentItem?.title || 'Unknown Episode'
+    },
+    getCurrentTranscriptionPodcast() {
+      if (!this.transcriptionStatus?.currentEpisodeId) return ''
+      const currentItem = this.transcriptionStatus.queue.find(item => item.episodeId === this.transcriptionStatus.currentEpisodeId)
+      if (!currentItem) return ''
+      const libraryItem = this.libraryItems[currentItem.libraryItemId]
+      return libraryItem?.media?.title || ''
+    },
+    getTranscriptionQueueCover(libraryItemId) {
+      return this.$store.getters['globals/getLibraryItemCoverSrcById'](libraryItemId)
+    },
+    getTranscriptionQueuePodcast(libraryItemId) {
+      const libraryItem = this.libraryItems[libraryItemId]
+      return libraryItem?.media?.title || 'Unknown Podcast'
+    },
+    startTranscriptionStatusPolling() {
+      // Poll every 5 seconds for updates
+      this.transcriptionStatusInterval = setInterval(() => {
+        if (!this.loadingTranscriptionStatus) {
+          this.refreshTranscriptionStatus()
+        }
+      }, 5000)
+    },
+    stopTranscriptionStatusPolling() {
+      if (this.transcriptionStatusInterval) {
+        clearInterval(this.transcriptionStatusInterval)
+        this.transcriptionStatusInterval = null
+      }
     }
   },
   mounted() {
     this.loadInitialDownloadQueue()
+    this.refreshTranscriptionStatus()
+    this.startTranscriptionStatusPolling()
   },
   beforeDestroy() {
     this.$root.socket.off('episode_download_queued', this.episodeDownloadQueued)
     this.$root.socket.off('episode_download_started', this.episodeDownloadStarted)
     this.$root.socket.off('episode_download_finished', this.episodeDownloadFinished)
+    this.stopTranscriptionStatusPolling()
   }
 }
 </script>

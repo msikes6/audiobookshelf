@@ -1,0 +1,53 @@
+{"timestamp":"2025-07-24 21:06:13.947","source":"Server.js:221","message":"=== Starting Server ===","levelName":"INFO","level":2}
+{"timestamp":"2025-07-24 21:06:13.948","source":"Server.js:144","message":"[Server] Init v2.26.3","levelName":"INFO","level":2}
+{"timestamp":"2025-07-24 21:06:13.948","source":"Server.js:145","message":"[Server] Node.js Version: v20.19.4","levelName":"INFO","level":2}
+{"timestamp":"2025-07-24 21:06:13.948","source":"Server.js:146","message":"[Server] Platform: linux","levelName":"INFO","level":2}
+{"timestamp":"2025-07-24 21:06:13.948","source":"Server.js:147","message":"[Server] Arch: x64","levelName":"INFO","level":2}
+{"timestamp":"2025-07-24 21:06:13.952","source":"Database.js:171","message":"[Database] absdatabase.sqlite not found at /config/absdatabase.sqlite","levelName":"INFO","level":2}
+{"timestamp":"2025-07-24 21:06:13.953","source":"Database.js:217","message":"[Database] Initializing db at \"/config/absdatabase.sqlite\"","levelName":"INFO","level":2}
+{"timestamp":"2025-07-24 21:06:13.971","source":"Database.js:292","message":"[Database] Loading extension /usr/local/lib/nusqlite3/libnusqlite3.so","levelName":"INFO","level":2}
+{"timestamp":"2025-07-24 21:06:13.971","source":"Database.js:300","message":"[Database] Successfully loaded extension /usr/local/lib/nusqlite3/libnusqlite3.so","levelName":"INFO","level":2}
+{"timestamp":"2025-07-24 21:06:13.971","source":"Database.js:269","message":"[Database] Db supports unaccent and unicode foldings","levelName":"INFO","level":2}
+{"timestamp":"2025-07-24 21:06:13.971","source":"Database.js:273","message":"[Database] Db connection was successful","levelName":"INFO","level":2}
+{"timestamp":"2025-07-24 21:06:14.004","source":"MigrationManager.js:71","message":"[MigrationManager] Database is new. Skipping migrations.","levelName":"INFO","level":2}
+{"timestamp":"2025-07-24 21:06:14.468","source":"Database.js:201","message":"[Database] Db initialized with models: user, session, apiKey, library, libraryFolder, book, podcast, podcastEpisode, libraryItem, mediaProgress, series, bookSeries, author, bookAuthor, collection, collectionBook, playlist, playlistMediaItem, device, playbackSession, feed, feedEpisode, setting, customMetadataProvider, mediaItemShare","levelName":"INFO","level":2}
+{"timestamp":"2025-07-24 21:06:14.469","source":"Database.js:865","message":"[Database] Adding trigger update_library_items_title","levelName":"INFO","level":2}
+{"timestamp":"2025-07-24 21:06:14.477","source":"Database.js:865","message":"[Database] Adding trigger update_library_items_title_ignore_prefix","levelName":"INFO","level":2}
+{"timestamp":"2025-07-24 21:06:14.485","source":"Database.js:865","message":"[Database] Adding trigger update_library_items_title_from_podcasts_title","levelName":"INFO","level":2}
+{"timestamp":"2025-07-24 21:06:14.493","source":"Database.js:865","message":"[Database] Adding trigger update_library_items_title_ignore_prefix_from_podcasts_title_ignore_prefix","levelName":"INFO","level":2}
+{"timestamp":"2025-07-24 21:06:14.501","source":"Database.js:903","message":"[Database] Adding trigger update_library_items_author_names_on_book_authors_insert","levelName":"INFO","level":2}
+{"timestamp":"2025-07-24 21:06:14.508","source":"Database.js:903","message":"[Database] Adding trigger update_library_items_author_names_on_book_authors_delete","levelName":"INFO","level":2}
+{"timestamp":"2025-07-24 21:06:14.517","source":"Database.js:928","message":"[Database] Adding trigger update_library_items_author_names_on_authors_update","levelName":"INFO","level":2}
+{"timestamp":"2025-07-24 21:06:14.555","source":"Database.js:207","message":"[Database] running ANALYZE","levelName":"INFO","level":2}
+{"timestamp":"2025-07-24 21:06:14.564","source":"Database.js:209","message":"[Database] ANALYZE completed","levelName":"INFO","level":2}
+{"timestamp":"2025-07-24 21:06:14.564","source":"TokenManager.js:42","message":"[TokenManager] JWT secret key not found, generating one","levelName":"INFO","level":2}
+{"timestamp":"2025-07-24 21:06:14.576","source":"LogManager.js:66","message":"[LogManager] Init current daily log filename: 2025-07-24.txt","levelName":"INFO","level":2}
+{"timestamp":"2025-07-24 21:06:14.579","source":"BackupManager.js:285","message":"[BackupManager] 0 Backups Found","levelName":"INFO","level":2}
+{"timestamp":"2025-07-24 21:06:14.579","source":"BackupManager.js:72","message":"[BackupManager] Auto Backups are disabled","levelName":"INFO","level":2}
+{"timestamp":"2025-07-24 21:06:14.590","source":"Server.js:421","message":"Listening on port :80","levelName":"INFO","level":2}
+{"timestamp":"2025-07-24 21:06:42.240","source":"Server.js:430","message":"[Server] Initializing new server","levelName":"INFO","level":2}
+{"timestamp":"2025-07-24 21:06:47.827","source":"LocalAuthStrategy.js:88","message":"[LocalAuth] User \"root\" logged in from ip ::ffff:192.168.0.129","levelName":"INFO","level":2}
+{"timestamp":"2025-07-24 21:06:48.071","source":"SocketAuthority.js:175","message":"[SocketAuthority] Socket Connected to /audiobookshelf/socket.io QTIuccDKVvVQJdYpAAAB","levelName":"INFO","level":2}
+{"timestamp":"2025-07-24 21:09:14.474","source":"Watcher.js:58","message":"[Watcher] Initializing watcher for \"podcasts\".","levelName":"INFO","level":2}
+{"timestamp":"2025-07-24 21:09:14.478","source":"Watcher.js:89","message":"[Watcher] \"podcasts\" Ready","levelName":"INFO","level":2}
+{"timestamp":"2025-07-24 21:11:17.463","source":"CoverManager.js:325","message":"[CoverManager] Downloaded libraryItem cover \"/podcasts/5 Minute History/cover.jpg\" from url \"https://is1-ssl.mzstatic.com/image/thumb/Podcasts115/v4/00/1f/0e/001f0e64-a91d-c222-223a-9f591f6efe26/mza_9280031257448344249.png/600x600bb.jpg\"","levelName":"INFO","level":2}
+{"timestamp":"2025-07-24 21:11:54.350","source":"PodcastManager.js:166","message":"[PodcastManager] Successfully downloaded podcast episode \"The History of IndyCar\"","levelName":"INFO","level":2}
+{"timestamp":"2025-07-24 21:12:14.361","source":"TranscriptionManager.js:92","message":"[TranscriptionManager] Added episode \"The History of IndyCar\" to transcription queue (priority: manual)","levelName":"INFO","level":2}
+{"timestamp":"2025-07-24 21:12:14.362","source":"TranscriptionManager.js:159","message":"[TranscriptionManager] Starting queue processing. Queue length: 1","levelName":"INFO","level":2}
+{"timestamp":"2025-07-24 21:12:14.363","source":"TranscriptionManager.js:219","message":"[TranscriptionManager] Starting transcription for episode \"The History of IndyCar\" (0a0e1706-e308-48cc-818a-75362a9e2a56)","levelName":"INFO","level":2}
+{"timestamp":"2025-07-24 21:12:14.391","source":"TranscriptionManager.js:254","message":"[TranscriptionManager] Sending request with filename: The History of IndyCar.mp3, contentType: audio/mpeg, fileSize: 15437814","levelName":"INFO","level":2}
+{"timestamp":"2025-07-24 21:12:22.117","source":"SocketAuthority.js:202","message":"[SocketAuthority] Socket QTIuccDKVvVQJdYpAAAB disconnected from client \"root\" after 334046ms (Reason: transport close)","levelName":"INFO","level":2}
+{"timestamp":"2025-07-24 21:12:22.318","source":"SocketAuthority.js:175","message":"[SocketAuthority] Socket Connected to /audiobookshelf/socket.io wvEqvMqA4PY0BW88AAAD","levelName":"INFO","level":2}
+{"timestamp":"2025-07-24 21:13:27.119","source":"TranscriptionManager.js:287","message":"[TranscriptionManager] Successfully completed transcription for episode \"The History of IndyCar\" (0a0e1706-e308-48cc-818a-75362a9e2a56)","levelName":"INFO","level":2}
+{"timestamp":"2025-07-24 21:13:27.119","source":"TranscriptionManager.js:182","message":"[TranscriptionManager] Successfully completed transcription for queued episode \"The History of IndyCar\"","levelName":"INFO","level":2}
+{"timestamp":"2025-07-24 21:13:27.121","source":"TranscriptionManager.js:190","message":"[TranscriptionManager] Failed to transcribe queued episode 0a0e1706-e308-48cc-818a-75362a9e2a56: TypeError: Cannot read properties of undefined (reading 'explicit')\n    at User.checkCanAccessLibraryItem (/app/server/models/User.js:675:53)\n    at SocketAuthority.libraryItemEmitter (/app/server/SocketAuthority.js:96:40)\n    at TranscriptionManager.processTranscriptionQueue (/app/server/managers/TranscriptionManager.js:187:27)","levelName":"ERROR","level":4}
+{"timestamp":"2025-07-24 21:13:27.121","source":"TranscriptionManager.js:196","message":"[TranscriptionManager] Queue processing completed","levelName":"INFO","level":2}
+{"timestamp":"2025-07-24 21:21:30.894","source":"SocketAuthority.js:202","message":"[SocketAuthority] Socket wvEqvMqA4PY0BW88AAAD disconnected from client \"root\" after 548576ms (Reason: transport close)","levelName":"INFO","level":2}
+{"timestamp":"2025-07-24 21:48:26.584","source":"LocalAuthStrategy.js:107","message":"[LocalAuth] Failed login attempt for username \"root\" from ip ::ffff:192.168.0.131 (Invalid password)","levelName":"ERROR","level":4}
+{"timestamp":"2025-07-24 21:48:34.881","source":"LocalAuthStrategy.js:88","message":"[LocalAuth] User \"root\" logged in from ip ::ffff:192.168.0.131","levelName":"INFO","level":2}
+{"timestamp":"2025-07-24 21:48:35.053","source":"SocketAuthority.js:175","message":"[SocketAuthority] Socket Connected to /audiobookshelf/socket.io WzPArWPFN-EmgbRCAAAF","levelName":"INFO","level":2}
+{"timestamp":"2025-07-24 21:49:18.053","source":"SocketAuthority.js:202","message":"[SocketAuthority] Socket WzPArWPFN-EmgbRCAAAF disconnected from client \"root\" after 43000ms (Reason: transport close)","levelName":"INFO","level":2}
+{"timestamp":"2025-07-24 21:53:13.507","source":"SocketAuthority.js:175","message":"[SocketAuthority] Socket Connected to /audiobookshelf/socket.io lwusRdZAGKb8J5PHAAAH","levelName":"INFO","level":2}
+{"timestamp":"2025-07-24 21:53:21.138","source":"SocketAuthority.js:202","message":"[SocketAuthority] Socket lwusRdZAGKb8J5PHAAAH disconnected from client \"root\" after 7631ms (Reason: transport close)","levelName":"INFO","level":2}
+{"timestamp":"2025-07-24 21:56:52.417","source":"SocketAuthority.js:175","message":"[SocketAuthority] Socket Connected to /audiobookshelf/socket.io JNTy8ycuKBKwENCEAAAJ","levelName":"INFO","level":2}
+{"timestamp":"2025-07-24 21:56:56.401","source":"SocketAuthority.js:202","message":"[SocketAuthority] Socket JNTy8ycuKBKwENCEAAAJ disconnected from client \"root\" after 3984ms (Reason: transport close)","levelName":"INFO","level":2}
