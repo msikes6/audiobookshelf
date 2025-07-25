@@ -1,0 +1,4 @@
+{"timestamp":"2025-07-25 15:00:24.180","source":"TokenManager.js:342","message":"[TokenManager] Invalid refresh token format: invalid signature","levelName":"ERROR","level":4}
+{"timestamp":"2025-07-25 15:00:29.234","source":"LocalAuthStrategy.js:88","message":"[LocalAuth] User \"root\" logged in from ip ::ffff:192.168.0.129","levelName":"INFO","level":2}
+{"timestamp":"2025-07-25 15:00:29.350","source":"SocketAuthority.js:175","message":"[SocketAuthority] Socket Connected to /audiobookshelf/socket.io 9Rkq0Ly55NLfFQS2AAAL","levelName":"INFO","level":2}
+{"timestamp":"2025-07-25 15:03:24.052","source":"SocketAuthority.js:202","message":"[SocketAuthority] Socket 9Rkq0Ly55NLfFQS2AAAL disconnected from client \"root\" after 174702ms (Reason: transport close)","levelName":"INFO","level":2}
