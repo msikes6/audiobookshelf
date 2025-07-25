@@ -63,7 +63,7 @@
             </div>
           </div>
 
-          <div v-if="transcriptionStatus.currentEpisodeId" class="mb-6 p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-lg mx-4 md:mx-0">
+          <div v-if="transcriptionStatus.currentEpisode" class="mb-6 p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-lg mx-4 md:mx-0">
             <div class="flex items-center space-x-3">
               <covers-preview-cover :src="currentTranscriptionCover" :width="48" :book-cover-aspect-ratio="bookCoverAspectRatio" :show-resolution="false" />
               <div class="grow">
@@ -152,10 +152,8 @@ export default {
       }) || []
     },
     currentTranscriptionCover() {
-      if (!this.transcriptionStatus?.currentEpisodeId) return null
-      const currentItem = this.transcriptionQueue.find(item => item.episodeId === this.transcriptionStatus.currentEpisodeId)
-      if (!currentItem) return null
-      return this.$store.getters['globals/getLibraryItemCoverSrcById'](currentItem.libraryItemId)
+      if (!this.transcriptionStatus?.currentEpisode) return null
+      return this.$store.getters['globals/getLibraryItemCoverSrcById'](this.transcriptionStatus.currentEpisode.libraryItemId)
     }
   },
   methods: {
@@ -206,9 +204,13 @@ export default {
         const response = await this.$axios.$get('/api/podcasts/transcription-status')
         this.transcriptionStatus = response
         
-        // Fetch library item details for queue items
-        const libraryItemIds = [...new Set(this.transcriptionStatus.queue.map(item => item.libraryItemId))]
-        for (const libraryItemId of libraryItemIds) {
+        // Fetch library item details for queue items and current episode
+        const allLibraryItemIds = [...new Set(this.transcriptionStatus.queue.map(item => item.libraryItemId))]
+        if (this.transcriptionStatus.currentEpisode) {
+          allLibraryItemIds.push(this.transcriptionStatus.currentEpisode.libraryItemId)
+        }
+        
+        for (const libraryItemId of allLibraryItemIds) {
           if (!this.libraryItems[libraryItemId]) {
             try {
               const libraryItem = await this.$axios.$get(`/api/items/${libraryItemId}`)
@@ -224,15 +226,12 @@ export default {
       this.loadingTranscriptionStatus = false
     },
     getCurrentTranscriptionTitle() {
-      if (!this.transcriptionStatus?.currentEpisodeId) return 'Unknown'
-      const currentItem = this.transcriptionStatus.queue.find(item => item.episodeId === this.transcriptionStatus.currentEpisodeId)
-      return currentItem?.title || 'Unknown Episode'
+      if (!this.transcriptionStatus?.currentEpisode) return 'Unknown'
+      return this.transcriptionStatus.currentEpisode.title || 'Unknown Episode'
     },
     getCurrentTranscriptionPodcast() {
-      if (!this.transcriptionStatus?.currentEpisodeId) return ''
-      const currentItem = this.transcriptionStatus.queue.find(item => item.episodeId === this.transcriptionStatus.currentEpisodeId)
-      if (!currentItem) return ''
-      const libraryItem = this.libraryItems[currentItem.libraryItemId]
+      if (!this.transcriptionStatus?.currentEpisode) return ''
+      const libraryItem = this.libraryItems[this.transcriptionStatus.currentEpisode.libraryItemId]
       return libraryItem?.media?.title || ''
     },
     getTranscriptionQueueCover(libraryItemId) {

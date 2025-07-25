@@ -13,6 +13,8 @@ class TranscriptionManager {
     this.transcriptionQueue = []
     /** @type {string|null} */
     this.currentTranscriptionEpisodeId = null
+    /** @type {Object|null} */
+    this.currentTranscriptionItem = null
     this.isProcessingQueue = false
   }
 
@@ -41,7 +43,7 @@ class TranscriptionManager {
    * @returns {Object}
    */
   getTranscriptionStatus() {
-    return {
+    const status = {
       isProcessing: this.isProcessingQueue,
       currentEpisodeId: this.currentTranscriptionEpisodeId,
       queueLength: this.transcriptionQueue.length,
@@ -52,6 +54,18 @@ class TranscriptionManager {
         priority: item.priority
       }))
     }
+
+    // Include current episode details if processing
+    if (this.currentTranscriptionEpisodeId && this.currentTranscriptionItem) {
+      status.currentEpisode = {
+        episodeId: this.currentTranscriptionItem.episodeId,
+        libraryItemId: this.currentTranscriptionItem.libraryItemId,
+        title: this.currentTranscriptionItem.title,
+        priority: this.currentTranscriptionItem.priority
+      }
+    }
+
+    return status
   }
 
   /**
@@ -161,6 +175,7 @@ class TranscriptionManager {
     while (this.transcriptionQueue.length > 0) {
       const queueItem = this.transcriptionQueue.shift()
       this.currentTranscriptionEpisodeId = queueItem.episodeId
+      this.currentTranscriptionItem = queueItem
 
       try {
         // Get the episode from database
@@ -192,6 +207,7 @@ class TranscriptionManager {
     }
 
     this.currentTranscriptionEpisodeId = null
+    this.currentTranscriptionItem = null
     this.isProcessingQueue = false
     Logger.info('[TranscriptionManager] Queue processing completed')
   }
